@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Enter an IP Address:"
+echo "Enter target IP Address:"
 read host
 
 # Initialize proxy variable as empty
@@ -20,8 +20,8 @@ while true; do
     echo "3. TCPDump"
     echo "4. Nmap Scan"
     echo "5. Change Target IP"
-    echo "6. CONFIGURE & ENABLE Proxy"
-    echo "7. DISABLE Proxy"
+    echo "6. TOGGLE Proxychains (Current: $PROXY_STATUS)"
+    echo "7. Note: Manual config is required in /etc/proxychains.conf"
     echo "8. Exit"
     echo -n "Choose an option: "
     read num
@@ -52,33 +52,50 @@ while true; do
             echo "Results saved to nmap_results.txt"
             ;;
         5)
-            echo "Enter new IP Address:"
+            echo "Enter new target IP Address:"
             read host
             ;;
-        6)
-            echo "Enter Proxy IP:"
-            read p_ip
-            echo "Enter Proxy Port:"
-            read p_port
-            echo "Enter Proxy Type (socks4/socks5/http):"
-            read p_type
 
-            # Automatically update /etc/proxychains.conf
-            echo "Updating /etc/proxychains.conf..."
-            sudo sed -i '/\[ProxyList\]/q' /etc/proxychains.conf
-            echo "$p_type $p_ip $p_port" | sudo tee -a /etc/proxychains.conf > /dev/null
+         6)
 
-            if [ $? -eq 0 ]; then
-                PROXY_CMD="proxychains"
-                echo "Configuration updated and Proxychains enabled."
-            else
-                echo "Failed to update configuration. Check sudo permissions."
-            fi
-            ;;
-        7)
-            PROXY_CMD=""
-            echo "Proxy disabled. Back to direct connection."
-            ;;
+                if [ -z "$PROXY_CMD" ]; then
+
+                    read -p "Enable Proxychains? (y/n): " confirm
+
+                    if [[ $confirm == "y" ]]; then
+
+                        PROXY_CMD="proxychains4"
+
+                        PROXY_STATUS="ON"
+
+                        echo "Proxychains enabled for all subsequent commands."
+
+                    fi
+
+                else
+
+                    PROXY_CMD=""
+
+                    PROXY_STATUS="OFF"
+
+                    echo "Proxychains disabled. Direct connection restored."
+
+                fi
+
+                ;;
+
+         7)
+
+             echo "--------------------------------------------------"
+             echo "IMPORTANT: This script does NOT edit your system files."
+
+             echo "To add/replace IPs, run: sudo vim /etc/proxychains.conf"
+
+             echo "Recommended setup: socks5 127.0.0.1 9050"
+
+             echo "--------------------------------------------------"
+
+             ;;
         8)
             echo "Exiting..."
             exit 0
@@ -91,6 +108,4 @@ while true; do
     echo -e "\nPress Enter to return to the menu..."
     read
 done
-
-
 
